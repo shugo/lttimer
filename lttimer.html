@@ -1,0 +1,57 @@
+<html>
+  <div id="time-left">
+  05:00
+  </div>
+  <button id="start">Start</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/ruby-head-wasm-wasi@0.5.0/dist/browser.script.iife.js"></script>
+  <script type="text/ruby">
+    require "js"
+
+    def document = JS.global[:document]
+
+    DORA = JS.eval("return new Audio('dora.mp3')")
+    TIME_LIMIT_SEC = 5 * 60
+    TIME_LEFT = document.getElementById("time-left")
+
+    def format_time(t)
+      format("%02d:%02d", t / 60, t % 60)
+    end
+
+    def start_timer
+      start_time = Time.now
+      while true
+        t = TIME_LIMIT_SEC - (Time.now - start_time)
+        t = 0 if t < 0
+        TIME_LEFT[:innerText] = format_time(t)
+        if t == 0
+          DORA.play
+          JS.eval("return new Promise((resolve) => setTimeout(resolve, 3000))").await
+          TIME_LEFT[:innerText] = format_time(TIME_LIMIT_SEC)
+          JS.eval("return new Promise((resolve) => setTimeout(resolve, 500))").await
+          start_time = Time.now
+        end
+        JS.eval("return new Promise((resolve) => setTimeout(resolve, 200))").await
+      end
+    end
+
+    TIME_LEFT[:innerText] = format_time(TIME_LIMIT_SEC)
+  </script>
+  <style type="text/css">
+    #time-left {
+      width: 100vw;
+      font-size: 32vw;
+    }
+  </style>
+  <script type="text/javascript">
+    async function startTimer() {
+      window.rubyVM.evalAsync("start_timer")
+    }
+    var start = document.getElementById("start")
+    console.log(start)
+    start.addEventListener("click", () => {
+      start.hidden = true;
+      startTimer()
+    }, false)
+  </script>
+</html>
