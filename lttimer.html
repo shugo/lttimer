@@ -3,6 +3,8 @@
   05:00
   </div>
   <button id="start">Start</button>
+  <button id="reset">Reset</button>
+  <button id="stop">Stop</button>
 
   <script src="https://cdn.jsdelivr.net/npm/ruby-head-wasm-wasi@0.5.0/dist/browser.script.iife.js"></script>
   <script type="text/ruby">
@@ -10,32 +12,56 @@
 
     def document = JS.global[:document]
 
-    DORA = JS.eval("return new Audio('dora.mp3')")
-    TIME_LIMIT_SEC = 5 * 60
-    TIME_LEFT = document.getElementById("time-left")
+    class Timer
+      # TIME_LIMIT_SEC = 5 * 60
+      TIME_LIMIT_SEC = 10
 
-    def format_time(t)
-      format("%02d:%02d", t / 60, t % 60)
-    end
+      def initialize
+        @dora = JS.eval("return new Audio('dora.mp3')")
+        @time_left = document.getElementById("time-left")
+        set_time_left
+        @running = false
+      end
 
-    def start_timer
-      start_time = Time.now
-      while true
-        t = TIME_LIMIT_SEC - (Time.now - start_time)
-        t = 0 if t < 0
-        TIME_LEFT[:innerText] = format_time(t)
-        if t == 0
-          DORA.play
-          JS.eval("return new Promise((resolve) => setTimeout(resolve, 3000))").await
-          TIME_LEFT[:innerText] = format_time(TIME_LIMIT_SEC)
-          JS.eval("return new Promise((resolve) => setTimeout(resolve, 500))").await
-          start_time = Time.now
+      def start
+        @running = true
+        @start_time = Time.now
+        while @running
+          t = TIME_LIMIT_SEC - (Time.now - @start_time)
+          t = 0 if t < 0
+          set_time_left(t)
+          if t == 0
+            @dora.play
+            JS.eval("return new Promise((resolve) => setTimeout(resolve, 3000))").await
+            set_time_left
+            JS.eval("return new Promise((resolve) => setTimeout(resolve, 500))").await
+            @start_time = Time.now
+          end
+          JS.eval("return new Promise((resolve) => setTimeout(resolve, 200))").await
         end
-        JS.eval("return new Promise((resolve) => setTimeout(resolve, 200))").await
+      end
+
+      def reset
+        @start_time = Time.now + 1
+      end
+
+      def stop
+        @running = false
+        set_time_left
+      end
+
+      private
+
+      def format_time(t)
+        format("%02d:%02d", t / 60, t % 60)
+      end
+
+      def set_time_left(t = TIME_LIMIT_SEC)
+        @time_left[:innerText] = format_time(t)
       end
     end
 
-    TIME_LEFT[:innerText] = format_time(TIME_LIMIT_SEC)
+    TIMER = Timer.new
   </script>
   <style type="text/css">
     #time-left {
@@ -45,13 +71,19 @@
   </style>
   <script type="text/javascript">
     async function startTimer() {
-      window.rubyVM.evalAsync("start_timer")
+      window.rubyVM.evalAsync("TIMER.start")
     }
     var start = document.getElementById("start")
-    console.log(start)
     start.addEventListener("click", () => {
-      start.hidden = true;
       startTimer()
+    }, false)
+    var reset = document.getElementById("reset")
+    reset.addEventListener("click", () => {
+      window.rubyVM.eval("TIMER.reset")
+    }, false)
+    var stop = document.getElementById("stop")
+    stop.addEventListener("click", () => {
+      window.rubyVM.eval("TIMER.stop")
     }, false)
   </script>
 </html>
