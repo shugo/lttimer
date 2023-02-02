@@ -12,8 +12,7 @@
     def document = JS.global[:document]
 
     class Timer
-      # TIME_LIMIT_SEC = 5 * 60
-      TIME_LIMIT_SEC = 10
+      TIME_LIMIT_SEC = 5 * 60
 
       def initialize
         @dora = JS.eval("return new Audio('dora.mp3')")
