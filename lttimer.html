@@ -7,6 +7,7 @@
     require "js"
 
     def document = JS.global[:document]
+    def window = JS.global[:window]
 
     class Timer
       TIME_LIMIT_SEC = 5 * 60
@@ -19,22 +20,24 @@
       end
 
       def start
-        return if @running
-        @running = true
-        @start_time = Time.now
-        while @running
-          t = TIME_LIMIT_SEC - (Time.now - @start_time)
-          t = 0 if t < 0
-          set_time_left(t)
-          if t == 0
-            @dora.play
-            msleep(3000)
-            set_time_left
-            @running = false
-            break
+        Fiber.new {
+          break if @running
+          @running = true
+          @start_time = Time.now
+          while @running
+            t = TIME_LIMIT_SEC - (Time.now - @start_time)
+            t = 0 if t < 0
+            set_time_left(t)
+            if t == 0
+              @dora.play
+              msleep(3000)
+              set_time_left
+              @running = false
+              break
+            end
+            msleep(200)
           end
-          msleep(200)
-        end
+        }.transfer
       end
 
       def stop
@@ -58,6 +61,14 @@
     end
 
     TIMER = Timer.new
+    window.addEventListener("keypress") do |event|
+      case event[:key].to_s
+      when "s"
+        TIMER.start
+      when "e"
+        TIMER.stop
+      end
+    end
   </script>
   <style type="text/css">
     body {
@@ -71,16 +82,4 @@
       font-size: 36vw;
     }
   </style>
-  <script type="text/javascript">
-    window.addEventListener("keypress", (event) => {
-      switch (event.key) {
-      case "s":
-        window.rubyVM.evalAsync("TIMER.start")
-        break;
-      case "e":
-        window.rubyVM.eval("TIMER.stop")
-        break;
-      }
-    });
-  </script>
 </html>
