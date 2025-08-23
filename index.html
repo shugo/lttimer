@@ -25,9 +25,15 @@
           break if @running
           @running = true
           @start_time = Time.now
+          dora_played = false
           while @running
             t = TIME_LIMIT_SEC - (Time.now - @start_time)
             t = 0 if t < 0
+            # 00:00になってからだとドラが鳴るのが遅いため調整
+            if !dora_played && t < 0.8
+              @dora.play
+              dora_played = true
+            end
             set_time_left(t)
             if t == 0
               @dora.play
