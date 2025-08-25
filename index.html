@@ -20,6 +20,10 @@
         @running = false
       end
 
+      def running?
+        @running
+      end
+
       def start
         Fiber.new {
           break if @running
@@ -74,6 +78,13 @@
         TIMER.start
       when "e"
         TIMER.stop
+      end
+    end
+    document.getElementById("time-left").addEventListener("click") do |event|
+      if TIMER.running?
+        TIMER.stop
+      else
+        TIMER.start
       end
     end
   </script>
