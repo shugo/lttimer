@@ -12,6 +12,7 @@
 
     class Timer
       TIME_LIMIT_SEC = location[:search].to_s.slice(/[?&]sec=([^&]+)/, 1)&.to_i || 5 * 60
+      DORA_PRELOAD_SEC = location[:search].to_s.slice(/[?&]preload=([^&]+)/, 1)&.to_f || 1.0
 
       def initialize
         @dora = JS.eval("return new Audio('dora.mp3')")
@@ -34,7 +35,7 @@
             t = TIME_LIMIT_SEC - (Time.now - @start_time)
             t = 0 if t < 0
             # 00:00になってからだとドラが鳴るのが遅いため調整
-            if !dora_played && t < 0.6
+            if !dora_played && t < DORA_PRELOAD_SEC
               @dora.play
               dora_played = true
             end
